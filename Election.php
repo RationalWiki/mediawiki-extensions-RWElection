@@ -20,6 +20,7 @@ $wgImplicitGroups[] = 'eligible';
 $wgElectionIP = dirname( __FILE__ );
 $wgExtensionMessagesFiles['Election'] = "$wgElectionIP/Election.i18n.php";
 $wgAutoloadClasses['SpecialElection'] =  "$wgElectionIP//Election.body.php";
+$wgElectionStoreDir = false;
 
 $wgSpecialPages['Election'] = 'SpecialElection';
 

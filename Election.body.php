@@ -49,7 +49,11 @@ class ElectionForm {
 
 	function doVote()
 	{
-		global $wgUser, $wgElectionName, $wgRequest, $wgElectionCandidates;
+		global $wgUser, $wgElectionName, $wgRequest, $wgElectionCandidates, $wgElectionStoreDir;
+
+		if ( !$wgElectionStoreDir ) {
+			throw new MWException( 'Please set $wgElectionStoreDir to a writable directory' );
+		}
 		$electionName = $wgRequest->getVal('electionName',null);
 		if ( is_null($electionName) || $electionName != $wgElectionName) {
 			return array('election-mismatch');
@@ -79,7 +83,7 @@ class ElectionForm {
 		if ( $result ) {
 			$dbw->commit();
 			$us=$wgUser->getId();
-			$f = fopen("{$wgElectionName}.blt", "a");
+			$f = fopen("{$wgElectionStoreDir}/{$wgElectionName}.blt", "a");
 			fwrite($f,$us);
 			fwrite($f," 1 ");
 			for ( $i=0; $i < $candidateCount + 1; $i++) {
