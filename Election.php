@@ -24,9 +24,3 @@ $wgElectionStoreDir = false;
 
 $wgSpecialPages['Election'] = 'SpecialElection';
 
-$wgHooks['ParserFirstCallInit'][] = 'wfElectionInit';
-
-function wfElectionInit( &$parser ) {
-  wfLoadExtensionMessages('Election');
-  return true;
-}

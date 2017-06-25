@@ -8,11 +8,11 @@ class ElectionForm {
 	function showForm( $err )
 	{
 		global $wgOut, $wgUser;
-		$wgOut->setPagetitle( wfMsg('Election') );
+		$wgOut->setPagetitle( wfMessage('Election')->escaped() );
 		if ( $err ) {
 			$key = array_shift($err);
-			$msg = wfMsgReal($key,$err);
-			$wgOut->setSubtitle( wfMsgHtml('formerror') );
+			$msg = wfMessage($key)->params($err);
+			$wgOut->setSubtitle( wfMessage('formerror')->escaped() );
 			$wgOut->addHTML( Xml::tags('p', array('class' => 'error'), $msg ) );
 		}
 
@@ -21,8 +21,8 @@ class ElectionForm {
 		$output =	Xml::openElement('form', array( 'method' => 'post', 'action' => $titleObject->getLocalURL("action=submit"), 'id' => 'election' ) );
 		for ( $i=1; $i < count($wgElectionCandidates) + 1; $i++ ) {
 			$output .= '<p>';
-			$output .= Xml::label(wfMsgExt( 'election-rank', array( 'parseinline' ), $i ),"candidate$i" ) . " ";
-			$options = Xml::option(wfMsg('election-none'),'-1',true);
+			$output .= Xml::label(wfMessage( 'election-rank' )->params( $i )->parse(),"candidate$i" ) . " ";
+			$options = Xml::option(wfMessage('election-none')->text(),'-1',true);
 			$j = 1;
 			foreach ($wgElectionCandidates as $candidate) {
 				$options .= Xml::option($candidate,$j);
@@ -38,7 +38,7 @@ class ElectionForm {
 		$output .= Html::hidden('wpEditToken', $wgUser->editToken() );
 		$output .= Html::hidden('electionName', $wgElectionName );
 		$output .= Html::hidden('electionCandidateCount', count($wgElectionCandidates) );
-		$output .= Xml::submitButton( wfMsg( 'election-vote' ),
+		$output .= Xml::submitButton( wfMessage( 'election-vote' )->text(),
                              array('name' => 'wpVote',
                                    'tabindex' => "$i",
                                    'accesskey' => 's') );
@@ -112,8 +112,8 @@ class ElectionForm {
 
 	function showSuccess() {
 		global $wgOut;
-		$wgOut->setPagetitle( wfMsg( 'Election' ) );
-		$text = wfMsg( 'election-thanks' );
+		$wgOut->setPagetitle( wfMessage( 'Election' )->escaped() );
+		$text = wfMessage( 'election-thanks' )->escaped();
 		$wgOut->addHTML( $text );
 	}
 }
@@ -144,12 +144,12 @@ class SpecialElection extends SpecialPage {
 		}
 
 		if( is_null($wgElectionName) || $wgElectionName == '' ) {
-			$wgOut->addHtml(wfMsg('election-closed'));
+			$wgOut->addHtml(wfMessage('election-closed')->escaped());
 			return;
 		}
 
 		if( !$wgUser->isAllowed( 'eligible' ) || $wgUser->isBlocked() ) {
-			$wgOut->addHtml(wfMsg('election-ineligible'));
+			$wgOut->addHtml(wfMessage('election-ineligible')->escaped());
 			return;
 		}
 
@@ -162,14 +162,14 @@ class SpecialElection extends SpecialPage {
 		} elseif ( $wgRequest->wasPosted() && 'submit' == $action &&
 		           $wgUser->matchEditToken( $wgRequest->getVal( 'wpEditToken' ) ) ) {
 			if ( $this->hasVoted() ) {
-				$wgOut->addHtml(wfMsg('election-alreadyvoted'));
+				$wgOut->addHtml(wfMessage('election-alreadyvoted')->escaped());
 				return;
 			} else {
 				$form->doSubmit();
 			}
 		} else {
 			if ( $this->hasVoted() ) {
-				$wgOut->addHtml(wfMsg('election-alreadyvoted'));
+				$wgOut->addHtml(wfMessage('election-alreadyvoted')->escaped());
 				return;
 			} else {
 				$form->showForm( '' );
