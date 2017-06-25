@@ -122,7 +122,6 @@ class SpecialElection extends SpecialPage {
 	function __construct() {
 		parent::__construct('Election','eligible');
 		$this->mIncludable = true;
-		wfLoadExtensionMessages('Election');
 	}
 
 	function hasVoted() {
