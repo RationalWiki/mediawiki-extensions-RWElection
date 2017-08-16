@@ -15,5 +15,5 @@ $messages['en'] = array(
   'election-rank'          => 'Rank $1:',
   'election-none'          => 'None',
   'election-vote'          => 'Vote',
-  'Election'               => 'Election booth',
+  'election'               => 'Election booth',
 ); 

@@ -35,7 +35,7 @@ class ElectionForm {
                          . Xml::closeElement( 'select' );
 			$output .= '</p>';
 		}
-		$output .= Html::hidden('wpEditToken', $wgUser->editToken() );
+		$output .= Html::hidden('wpEditToken', $wgUser->getEditToken() );
 		$output .= Html::hidden('electionName', $wgElectionName );
 		$output .= Html::hidden('electionCandidateCount', count($wgElectionCandidates) );
 		$output .= Xml::submitButton( wfMessage( 'election-vote' )->text(),
