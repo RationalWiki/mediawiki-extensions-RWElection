@@ -1,10 +1,8 @@
 <?php
 
-class ElectionForm {
-	function ElectionForm( $par )
-	{
-	}
+use MediaWiki\MediaWikiServices;
 
+class ElectionForm {
 	function showForm( $err )
 	{
 		global $wgOut, $wgUser;
@@ -18,7 +16,14 @@ class ElectionForm {
 
 		global $wgElectionCandidates, $wgElectionName;
  		$titleObject = SpecialPage::getTitleFor( 'Election' );
-		$output =	Xml::openElement('form', array( 'method' => 'post', 'action' => $titleObject->getLocalURL("action=submit"), 'id' => 'election' ) );
+		$output = Xml::openElement(
+			'form',
+			array(
+				'method' => 'post',
+				'action' => $titleObject->getLocalURL("action=submit"),
+				'id' => 'election'
+			)
+		);
 		for ( $i=1; $i < count($wgElectionCandidates) + 1; $i++ ) {
 			$output .= '<p>';
 			$output .= Xml::label(wfMessage( 'election-rank' )->params( $i )->parse(),"candidate$i" ) . " ";
@@ -77,11 +82,15 @@ class ElectionForm {
 			return array('election-error');
 		}
 
-		//$wgUser->setOption('election' . $wgElectionName,'voted');
+		$lbf = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+		$lbf->beginMasterChanges( __METHOD__ );
 		$dbw = wfGetDB(DB_MASTER);
-		$result = $dbw->insert('election_voted',array('ev_user' => $wgUser->getId(), 'ev_election' => $wgElectionName),__METHOD__);
+		$result = $dbw->insert(
+			'election_voted',
+			array('ev_user' => $wgUser->getId(), 'ev_election' => $wgElectionName),
+			__METHOD__);
+		$lbf->commitMasterChanges( __METHOD__ );
 		if ( $result ) {
-			$dbw->commit();
 			$us=$wgUser->getId();
 			$f = fopen("{$wgElectionStoreDir}/{$wgElectionName}.blt", "a");
 			fwrite($f,$us);
@@ -102,7 +111,7 @@ class ElectionForm {
 	{
 		global $wgOut;
 		$retval = $this->doVote();
-		if (empty($retval)) {
+		if (!$retval) {
 			$titleObj = SpecialPage::getTitleFor('Election');
 			$wgOut->redirect($titleObj->getFullURL('action=success' ));
 			return;
@@ -125,21 +134,24 @@ class SpecialElection extends SpecialPage {
 	}
 
 	function hasVoted() {
-		global $wgUser,$wgElectionName;
+		global $wgElectionName;
 		$dbr = wfGetDB(DB_MASTER);
-		$res = $dbr->select('election_voted','ev_user, ev_election',array('ev_user' => $wgUser->getId(), 'ev_election' => $wgElectionName),__METHOD__);
+		$res = $dbr->select(
+			'election_voted',
+			'ev_user, ev_election',
+			array('ev_user' => $this->getUser()->getId(), 'ev_election' => $wgElectionName),
+			__METHOD__);
 		$voted = ($res->numRows() != 0);
 		$res->free();
 		return $voted;
 	}
 
 	function execute( $par ) {
-		global $wgRequest, $wgOut, $wgUser, $wgElectionName;
+		global $wgRequest, $wgOut, $wgElectionName;
 		$this->setHeaders();
 
 		if( wfReadOnly() ) {
-			$wgOut->readOnlyPage();
-			return;
+			throw new ReadOnlyError;
 		}
 
 		if( is_null($wgElectionName) || $wgElectionName == '' ) {
@@ -147,19 +159,24 @@ class SpecialElection extends SpecialPage {
 			return;
 		}
 
-		if( !$wgUser->isAllowed( 'eligible' ) || $wgUser->isBlocked() ) {
+		$user = $this->getUser();
+		$pm = MediaWikiServices::getInstance()->getPermissionManager();
+		$eligible = $pm->userHasRight( $user, 'eligible' );
+		$blocked = $user->getBlock() && $user->getBlock()->isSitewide();
+		if ( !$eligible || $blocked ) {
 			$wgOut->addHtml(wfMessage('election-ineligible')->escaped());
 			return;
 		}
 
-		$form = new ElectionForm( $par );
+		$form = new ElectionForm;
 
 		$action = $wgRequest->getVal( 'action' );
 		if ( 'success' == $action )
 		{
 			$form->showSuccess();
 		} elseif ( $wgRequest->wasPosted() && 'submit' == $action &&
-		           $wgUser->matchEditToken( $wgRequest->getVal( 'wpEditToken' ) ) ) {
+			$user->matchEditToken( $wgRequest->getVal( 'wpEditToken' ) )
+		) {
 			if ( $this->hasVoted() ) {
 				$wgOut->addHtml(wfMessage('election-alreadyvoted')->escaped());
 				return;
